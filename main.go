@@ -16,6 +16,7 @@ import (
 	"image/png"
 	_ "image/png"
 	"os"
+	"strings"
 )
 
 // == parameters ==
@@ -198,6 +199,9 @@ func loadImage(filePath string) (image.Image, image.Config, error) {
 
 func saveImage(filePath string, matrix [][][]int) error {
 	imgFile, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
 	defer imgFile.Close()
 
 	// choose right encoder
@@ -219,6 +223,16 @@ func saveImage(filePath string, matrix [][][]int) error {
 			}
 		}
 	}
+
+	// save with new name
+	savePathArr := strings.Split(filePath, ".")
+	pathArr := strings.Split(filePath, "/")
+	p := ""
+	for i := 0; i < len(pathArr)-1; i++ {
+		p += pathArr[i] + "/"
+	}
+	savePath, _ := os.Create(p + "indie." + savePathArr[len(savePathArr)-1])
+	err = jpeg.Encode(savePath, img, nil)
 
 	return err
 }
@@ -252,6 +266,7 @@ func main() {
 	matrix := spanImage(img, conf)
 	fmt.Println("capacity:", capacity(matrix), "Bytes")
 	matrix = encode("Hello World!", matrix)
+	err = saveImage("indigo.jpeg", matrix)
 	if err != nil {
 		fmt.Println("indie ERROR:", err)
 	}
