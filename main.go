@@ -146,7 +146,7 @@ func encode(plainText string, matrix [][][]int) (out [][][]int) {
 	breaker := false
 	for i := 0; i < h; i++ {
 		for j := 0; j < w; j++ {
-			if i*w+j > pixels {
+			if i*w+j > pixels-4 {
 				breaker = true
 				break
 			} else {
@@ -200,6 +200,7 @@ func loadImage(filePath string) (image.Image, image.Config, error) {
 func saveImage(filePath string, matrix [][][]int) error {
 	imgFile, err := os.Open(filePath)
 	if err != nil {
+		fmt.Println("indie saveImage ERROR:", err)
 		return err
 	}
 	defer imgFile.Close()
@@ -211,6 +212,7 @@ func saveImage(filePath string, matrix [][][]int) error {
 		if err != nil {
 			img, err = gif.Decode(imgFile)
 			if err != nil {
+				fmt.Println("indie Decode ERROR:", err)
 				return err
 			}
 		}
@@ -233,6 +235,7 @@ func saveImage(filePath string, matrix [][][]int) error {
 	}
 	savePath, _ := os.Create(p + "indie." + savePathArr[len(savePathArr)-1])
 	err = jpeg.Encode(savePath, img, nil)
+	fmt.Println("indie Encode ERROR:", err)
 
 	return err
 }
