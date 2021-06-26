@@ -6,10 +6,10 @@ Indie is a steganographic program which hides text into images.
 package main
 
 import (
+	"errors"
 	"fmt"
 	"image"
 	"image/color"
-	"image/gif"
 	_ "image/gif"
 	"image/jpeg"
 	_ "image/jpeg"
@@ -26,6 +26,10 @@ type Changeable interface {
 	Set(x, y int, c color.RGBA64)
 }
 
+type error interface {
+	Error() string
+}
+
 // == functions ==
 func binary(s string) string {
 	res := ""
@@ -39,9 +43,9 @@ func bitsToVector(fourBitString string) (out [3]int) {
 	if len(fourBitString) != 4 {
 		fmt.Println("ERROR bitsToDiffVector: input must be 4 bit string")
 	} else if fourBitString == "0000" {
-		out[0] = 0
-		out[1] = 0
-		out[2] = 0
+		out[0] = 1
+		out[1] = -1
+		out[2] = -1
 	} else if fourBitString == "0001" {
 		out[0] = 0
 		out[1] = 0
@@ -135,9 +139,62 @@ func capacity(matrix [][][]int) (out int) {
 	return c
 }
 
-func encode(plainText string, matrix [][][]int) (out [][][]int) {
+func decode(privatePath, publicPath string) string {
 
+	img_priv, conf_priv, err := loadImage(privatePath)
+	if err != nil {
+		fmt.Println("indie loadImage ERROR:", err)
+	}
+	img_pub, conf_pub, err := loadImage(publicPath)
+	if err != nil {
+		fmt.Println("indie loadImage ERROR:", err)
+	}
+	m1 := spanImage(img_priv, conf_priv)
+	m2 := spanImage(img_pub, conf_pub)
+
+	if len(m1) != len(m2) || len(m1[0]) != len(m2[0]) {
+		fmt.Println("indie compatibility ERROR")
+	}
+	out := ""
+	for i := 0; i < len(m1); i++ {
+		for j := 0; j < len(m1[0]); j++ {
+			v := make([]int, 3)
+			v[0] = m2[i][j][0] - m1[i][j][0]
+			v[1] = m2[i][j][1] - m1[i][j][1]
+			v[2] = m2[i][j][2] - m1[i][j][2]
+			if v[0] == 0 && v[1] == 0 && v[2] == 0 {
+				// do nothing
+				fmt.Println(out, v, m2[i][j], m1[i][j])
+			} else {
+				out += vectorToBits(v)
+				fmt.Println(out, v, m2[i][j], m1[i][j])
+			}
+
+		}
+	}
+	fmt.Println("decoded:", out)
+
+	return out
+}
+
+func encode(filePath, plainText string) error {
+
+	// convert to matrix object
+	img, conf, err := loadImage(filePath)
+	if err != nil {
+		return err
+	}
+	matrix := spanImage(img, conf)
 	h, w := len(matrix), len(matrix[0])
+
+	// check if there is enough capacity
+	cap := capacity(matrix)
+	size := len(plainText)
+	if size > cap {
+		x := "Not enough capacity (" + string(cap) + " Bytes) for this image (" + string(size) + " Bytes)."
+		err = errors.New(x)
+		return err
+	}
 
 	// convert ascii string to binary
 	bin := binary(plainText)
@@ -174,8 +231,10 @@ func encode(plainText string, matrix [][][]int) (out [][][]int) {
 			break
 		}
 	}
-	out = matrix
-	return
+
+	// save image
+	err = saveImage(filePath, matrix)
+	return err
 }
 
 func loadImage(filePath string) (image.Image, image.Config, error) {
@@ -206,17 +265,18 @@ func saveImage(filePath string, matrix [][][]int) error {
 	defer imgFile.Close()
 
 	// choose right encoder
-	img, err := jpeg.Decode(imgFile)
-	if err != nil {
-		img, err = png.Decode(imgFile)
-		if err != nil {
-			img, err = gif.Decode(imgFile)
-			if err != nil {
-				fmt.Println("indie Decode ERROR:", err)
-				return err
-			}
-		}
-	}
+	img, err := png.Decode(imgFile)
+	// img, err := jpeg.Decode(imgFile)
+	// if err != nil {
+	// 	img, err = png.Decode(imgFile)
+	// 	if err != nil {
+	// 		img, err = gif.Decode(imgFile)
+	// 		if err != nil {
+	// 			fmt.Println("indie Decode ERROR:", err)
+	// 			return err
+	// 		}
+	// 	}
+	// }
 	if cimg, ok := img.(Changeable); ok {
 		for i := 0; i < len(matrix); i++ {
 			for j := 0; j < len(matrix[0]); j++ {
@@ -227,6 +287,8 @@ func saveImage(filePath string, matrix [][][]int) error {
 	}
 
 	// save with new name
+	var opt jpeg.Options
+	opt.Quality = 100
 	savePathArr := strings.Split(filePath, ".")
 	pathArr := strings.Split(filePath, "/")
 	p := ""
@@ -234,8 +296,10 @@ func saveImage(filePath string, matrix [][][]int) error {
 		p += pathArr[i] + "/"
 	}
 	savePath, _ := os.Create(p + "indie." + savePathArr[len(savePathArr)-1])
-	err = jpeg.Encode(savePath, img, nil)
-	fmt.Println("indie Encode ERROR:", err)
+	err = png.Encode(savePath, img)
+	if err != nil {
+		fmt.Println("indie Encode ERROR:", err)
+	}
 
 	return err
 }
@@ -264,14 +328,53 @@ func spanImage(imageObject image.Image, configObject image.Config) (matrix [][][
 	return
 }
 
-func main() {
-	img, conf, err := loadImage("indigo.jpeg")
-	matrix := spanImage(img, conf)
-	fmt.Println("capacity:", capacity(matrix), "Bytes")
-	matrix = encode("Hello World!", matrix)
-	err = saveImage("indigo.jpeg", matrix)
-	if err != nil {
-		fmt.Println("indie ERROR:", err)
+func vectorToBits(v []int) (out string) {
+	if v[0] == 1 && v[1] == -1 && v[2] == -1 {
+		out = "0000"
+	} else if v[0] == 0 && v[1] == 0 && v[2] == -1 {
+		out = "0001"
+	} else if v[0] == 0 && v[1] == 0 && v[2] == 1 {
+		out = "0010"
+	} else if v[0] == 0 && v[1] == -1 && v[2] == 0 {
+		out = "0011"
+	} else if v[0] == 0 && v[1] == -1 && v[2] == -1 {
+		out = "0100"
+	} else if v[0] == 0 && v[1] == -1 && v[2] == 1 {
+		out = "0101"
+	} else if v[0] == 0 && v[1] == 1 && v[2] == 0 {
+		out = "0110"
+	} else if v[0] == 0 && v[1] == 1 && v[2] == -1 {
+		out = "0111"
+	} else if v[0] == 0 && v[1] == 1 && v[2] == 1 {
+		out = "1000"
+	} else if v[0] == -1 && v[1] == 0 && v[2] == 0 {
+		out = "1001"
+	} else if v[0] == -1 && v[1] == 0 && v[2] == -1 {
+		out = "1010"
+	} else if v[0] == -1 && v[1] == 0 && v[2] == 1 {
+		out = "1011"
+	} else if v[0] == 1 && v[1] == -1 && v[2] == 0 {
+		out = "1100"
+	} else if v[0] == 1 && v[1] == 1 && v[2] == 0 {
+		out = "1101"
+	} else if v[0] == 1 && v[1] == 1 && v[2] == -1 {
+		out = "1110"
+	} else if v[0] == 1 && v[1] == 1 && v[2] == 1 {
+		out = "1111"
 	}
-	//fmt.Println(matrix)
+	return
+}
+
+func main() {
+	file := "parrot.png"
+	err := encode(file, "Hello World!")
+	if err != nil {
+		fmt.Println("Error in encoding:", err)
+	} else {
+		fmt.Println(file, "encoded.")
+	}
+	decode(file, "indie.png")
+	if err != nil {
+		fmt.Println("Error in decoding:", err)
+	}
 }
