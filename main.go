@@ -22,31 +22,17 @@ import (
 // == parameters ==
 var SIZE = 1
 var bits = 8
-
 var mem = int(math.Pow(2, float64(bits))) - 1
 
+// == types ==
 type Changeable interface {
 	Set(x, y int, c color.Color)
-}
-
-type MyImg struct {
-	// Embed image.Image so MyImg will implement image.Image
-	// because fields and methods of Image will be promoted:
-	image.Image
-}
-
-type RGBA8 struct {
-	R, G, B, A uint8
-}
-
-type RGBA16 struct {
-	R, G, B, A uint16
 }
 
 // == functions ==
 func ascii(s string) string {
 	res := ""
-	for i := 0; i < len(s)-8; i += 8 {
+	for i := 0; i < len(s); i += 8 {
 		sub := s[i : i+8]
 		integer, err := strconv.ParseInt(sub, 2, 64)
 		check(err)
@@ -164,7 +150,7 @@ func capacity(matrix [][][]int) (out int) {
 	// 	}
 	// }
 	bytes := int(bitsPerPixel * pix / 8)
-	fmt.Println("capacity:", bytes)
+	fmt.Println("capacity: ", bytes, " Bytes")
 	return bytes
 }
 
@@ -197,9 +183,9 @@ func decode(privatePath, publicPath string) string {
 			// 	fmt.Println("v", v)
 			// }
 
-			if i == 0 && j == 0 {
-				fmt.Println("is", m2[i][j])
-			}
+			// if i == 0 && j == 0 {
+			// 	fmt.Println("is", m2[i][j])
+			// }
 			if v[0] == 0 && v[1] == 0 && v[2] == 0 {
 				// do nothing
 				//fmt.Println(out, v, m2[i][j], m1[i][j])
@@ -210,7 +196,7 @@ func decode(privatePath, publicPath string) string {
 
 		}
 	}
-	fmt.Println("decoded:", out, ascii(out))
+	//fmt.Println("decoded:", out, ascii(out))
 
 	return out
 }
@@ -235,47 +221,49 @@ func encode(filePath, plainText string) error {
 
 	// convert ascii string to binary
 	bin := binary(plainText)
-	fmt.Println(bin)
-	pixels := len(bin) / 4
+
+	//fmt.Println("bin TEST", plainText, bin, ascii(bin))
+	//pixels := len(bin) / 4
 	breaker := false
+	encodedString := ""
 	for i := 0; i < h; i++ {
 		for j := 0; j < w; j++ {
-			if i*w+j > pixels-4 {
+			r := matrix[i][j][0]
+			g := matrix[i][j][1]
+			b := matrix[i][j][2]
+			//fmt.Println("before", r, g, b)
+			// determine if pixel is too dark or too bright
+			if r > mem-SIZE-1 || r < 2 {
+				// do nothing
+			} else if g > mem-SIZE-1 || g < 2 {
+				// do nothing
+			} else if b > mem-SIZE-1 || b < 2 {
+				// do nothing
+			} else {
+				// determine vector
+				chunk := bin[(i*w+j)*4 : (i*w+j+1)*4] // 4 bit chunk
+				encodedString += chunk
+				v := bitsToVector(chunk)
+
+				// crop pixel
+				matrix[i][j][0] = r + v[0]
+				matrix[i][j][1] = g + v[1]
+				matrix[i][j][2] = b + v[2]
+				//fmt.Println("after", matrix[i][j])
+				// if r != matrix[i][j][0] {
+				// 	fmt.Println("change", matrix[i][j], r, g, b)
+				// }
+			}
+			if encodedString == bin {
 				breaker = true
 				break
-			} else {
-				r := matrix[i][j][0]
-				g := matrix[i][j][1]
-				b := matrix[i][j][2]
-				//fmt.Println("before", r, g, b)
-				// determine if pixel is too dark or too bright
-				if r > mem-SIZE-1 || r < 2 {
-					// do nothing
-				} else if g > mem-SIZE-1 || g < 2 {
-					// do nothing
-				} else if b > mem-SIZE-1 || b < 2 {
-					// do nothing
-				} else {
-					// determine vector
-					v := bitsToVector(bin[(i*w+j)*4 : (i*w+j+1)*4])
-
-					// crop pixel
-					matrix[i][j][0] = r + v[0]
-					matrix[i][j][1] = g + v[1]
-					matrix[i][j][2] = b + v[2]
-					//fmt.Println("after", matrix[i][j])
-					if r != matrix[i][j][0] {
-						fmt.Println("change", matrix[i][j], r, g, b)
-					}
-				}
-
 			}
 		}
 		if breaker {
 			break
 		}
 	}
-	fmt.Println("should", matrix[0][0])
+	// fmt.Println("should", matrix[0][0])
 	// save image
 	err = saveImage(filePath, matrix)
 	return err
@@ -283,20 +271,13 @@ func encode(filePath, plainText string) error {
 
 func loadImage(filePath string) (image.Image, image.Config, error) {
 	f, err := os.Open(filePath)
-	if err != nil {
-		fmt.Println("indie loadImage open ERROR:", err)
-	}
+	check(err)
 	defer f.Close()
 	img, _, err := image.Decode(f)
 	f, err = os.Open(filePath)
 	defer f.Close()
 	conf, _, e := image.DecodeConfig(f)
-	if e != nil {
-		fmt.Println("indie decoding ERROR:", e)
-	}
-	if err != nil {
-		fmt.Println("indie loadImage ERROR:", err)
-	}
+	check(e)
 	return img, conf, err
 }
 
@@ -304,7 +285,7 @@ func saveImage(filePath string, matrix [][][]int) error {
 
 	// create a writable img type
 	cimg := image.NewRGBA(image.Rect(0, 0, len(matrix), len(matrix[0])))
-	fmt.Println("should saveimage", matrix[0][0])
+	// fmt.Println("should saveimage", matrix[0][0])
 	for i := 0; i < len(matrix); i++ {
 		for j := 0; j < len(matrix[0]); j++ {
 			if bits == 8 {
@@ -316,7 +297,7 @@ func saveImage(filePath string, matrix [][][]int) error {
 	}
 	x, y, z, _ := cimg.At(0, 0).RGBA()
 	x, y, z = x>>8, y>>8, z>>8
-	fmt.Println("should saveimage 2", x, y, z)
+	// fmt.Println("should saveimage 2", x, y, z)
 	// save with new name
 	savePathArr := strings.Split(filePath, ".")
 	pathArr := strings.Split(filePath, "/")
@@ -349,9 +330,9 @@ func spanImage(imageObject image.Image, configObject image.Config) (matrix [][][
 		for j := 0; j < w; j++ {
 			r, g, b, _ := imageObject.At(i, j).RGBA() // returns rgba each in 16 bit alpha color
 			r, g, b = r>>8, g>>8, b>>8
-			if i == 0 && j == 0 {
-				fmt.Println("raw RGBA:", r, g, b)
-			}
+			// if i == 0 && j == 0 {
+			// 	fmt.Println("raw RGBA:", r, g, b)
+			// }
 
 			//fmt.Printf("[X : %d Y : %v] R : %v, G : %v, B : %v, A : %v  \n", i, j, r, g, b, a)
 			matrix[i][j][0] = int(r)
@@ -402,7 +383,7 @@ func vectorToBits(v []int) (out string) {
 func main() {
 	fmt.Println("Memory:", mem)
 	file := "parrot.png"
-	err := encode(file, "Hello World!")
+	err := encode(file, "Hello World!a")
 	if err != nil {
 		fmt.Println("Error in encoding:", err)
 	} else {
