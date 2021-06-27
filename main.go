@@ -15,6 +15,7 @@ import (
 	_ "image/png"
 	"math"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -43,6 +44,16 @@ type RGBA16 struct {
 }
 
 // == functions ==
+func ascii(s string) string {
+	res := ""
+	for i := 0; i < len(s)-8; i += 8 {
+		sub := s[i : i+8]
+		integer, err := strconv.ParseInt(sub, 2, 64)
+		check(err)
+		res += string([]byte{uint8(integer)})
+	}
+	return res
+}
 func binary(s string) string {
 	res := ""
 	for _, c := range s {
@@ -199,7 +210,7 @@ func decode(privatePath, publicPath string) string {
 
 		}
 	}
-	fmt.Println("decoded:", out)
+	fmt.Println("decoded:", out, ascii(out))
 
 	return out
 }
