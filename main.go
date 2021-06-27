@@ -6,7 +6,6 @@ Indie is a steganographic program which hides text into images.
 package main
 
 import (
-	"errors"
 	"fmt"
 	"image"
 	"image/color"
@@ -14,12 +13,16 @@ import (
 	_ "image/jpeg"
 	"image/png"
 	_ "image/png"
+	"math"
 	"os"
 	"strings"
 )
 
 // == parameters ==
-var SIZE = 100
+var SIZE = 1
+var bits = 8
+
+var mem = int(math.Pow(2, float64(bits))) - 1
 
 type Changeable interface {
 	Set(x, y int, c color.Color)
@@ -29,6 +32,14 @@ type MyImg struct {
 	// Embed image.Image so MyImg will implement image.Image
 	// because fields and methods of Image will be promoted:
 	image.Image
+}
+
+type RGBA8 struct {
+	R, G, B, A uint8
+}
+
+type RGBA16 struct {
+	R, G, B, A uint16
 }
 
 // == functions ==
@@ -41,9 +52,7 @@ func binary(s string) string {
 }
 
 func bitsToVector(fourBitString string) (out [3]int) {
-	if len(fourBitString) != 4 {
-		fmt.Println("ERROR bitsToDiffVector: input must be 4 bit string")
-	} else if fourBitString == "0000" {
+	if fourBitString == "0000" {
 		out[0] = SIZE
 		out[1] = -SIZE
 		out[2] = -SIZE
@@ -124,11 +133,11 @@ func capacity(matrix [][][]int) (out int) {
 			g := matrix[i][j][1]
 			b := matrix[i][j][2]
 			// determine if pixel is too dark or too bright
-			if r > 65535-SIZE || r < 2 {
+			if r > mem-SIZE || r < 2 {
 				// do nothing
-			} else if g > 65535-SIZE || g < 2 {
+			} else if g > mem-SIZE || g < 2 {
 				// do nothing
-			} else if b > 65535-SIZE || b < 2 {
+			} else if b > mem-SIZE || b < 2 {
 				// do nothing
 			} else {
 				pix += 1
@@ -138,13 +147,13 @@ func capacity(matrix [][][]int) (out int) {
 	availableSize := (2*SIZE + 1)
 	bitsPerPixel := 4
 	for i := 0; i < 8; i++ {
-		s := 2 ^ i
+		s := int(math.Pow(2, float64(i)))
 		if s > availableSize {
-			bitsPerPixel = 2 ^ (i - 1)
+			bitsPerPixel = int(math.Pow(2, float64(i-1)))
 		}
 	}
 	bytes := int(bitsPerPixel * pix / 8)
-	fmt.Println("capacity", bytes)
+	fmt.Println("capacity:", bytes)
 	return bytes
 }
 
@@ -157,13 +166,9 @@ func check(err error) {
 func decode(privatePath, publicPath string) string {
 
 	img_priv, conf_priv, err := loadImage(privatePath)
-	if err != nil {
-		fmt.Println("indie loadImage ERROR:", err)
-	}
+	check(err)
 	img_pub, conf_pub, err := loadImage(publicPath)
-	if err != nil {
-		fmt.Println("indie loadImage ERROR:", err)
-	}
+	check(err)
 	m1 := spanImage(img_priv, conf_priv)
 	m2 := spanImage(img_pub, conf_pub)
 
@@ -204,10 +209,9 @@ func encode(filePath, plainText string) error {
 	// convert to matrix object
 	img, conf, err := loadImage(filePath)
 	r, g, b, _ := img.At(0, 0).RGBA()
-	fmt.Println("raw", r, g, b)
-	if err != nil {
-		return err
-	}
+	r, g, b = r>>8, g>>8, b>>8
+
+	check(err)
 	matrix := spanImage(img, conf)
 	h, w := len(matrix), len(matrix[0])
 
@@ -215,9 +219,7 @@ func encode(filePath, plainText string) error {
 	cap := capacity(matrix)
 	size := len(plainText)
 	if size > cap {
-		x := "Not enough capacity (" + string(cap) + " Bytes) for this image (" + string(size) + " Bytes)."
-		err = errors.New(x)
-		return err
+		fmt.Println("Not enough capacity (" + string(cap) + " Bytes) for this image (" + string(size) + " Bytes).")
 	}
 
 	// convert ascii string to binary
@@ -236,11 +238,11 @@ func encode(filePath, plainText string) error {
 				b := matrix[i][j][2]
 				//fmt.Println("before", r, g, b)
 				// determine if pixel is too dark or too bright
-				if r > 65533 || r < 2 {
+				if r > mem-SIZE-1 || r < 2 {
 					// do nothing
-				} else if g > 65533 || g < 2 {
+				} else if g > mem-SIZE-1 || g < 2 {
 					// do nothing
-				} else if b > 65533 || b < 2 {
+				} else if b > mem-SIZE-1 || b < 2 {
 					// do nothing
 				} else {
 					// determine vector
@@ -295,12 +297,21 @@ func saveImage(filePath string, matrix [][][]int) error {
 	for i := 0; i < len(matrix); i++ {
 		for j := 0; j < len(matrix[0]); j++ {
 			if i == 0 && j == 0 {
-				fmt.Println("uint16 encoding", uint16(matrix[i][j][0]), uint16(matrix[i][j][1]), uint16(matrix[i][j][2]))
+				if bits == 8 {
+					fmt.Println("uint8 encoding", uint8(matrix[i][j][0]), uint8(matrix[i][j][1]), uint8(matrix[i][j][2]))
+					cimg.Set(i, j, color.RGBA{uint8(matrix[i][j][0]), uint8(matrix[i][j][1]), uint8(matrix[i][j][2]), 255})
+				}
+				// else if bits == 16 {
+				// 	fmt.Println("uint16 encoding", uint8(matrix[i][j][0]), uint8(matrix[i][j][1]), uint8(matrix[i][j][2]))
+				// 	cimg.Set(i, j, color.RGBA{uint16(matrix[i][j][0]), uint16(matrix[i][j][1]), uint16(matrix[i][j][2]), uint16(mem)})
+				// }
+
 			}
-			cimg.Set(i, j, color.RGBA64{uint16(matrix[i][j][0]), uint16(matrix[i][j][1]), uint16(matrix[i][j][2]), 65535})
+
 		}
 	}
 	x, y, z, _ := cimg.At(0, 0).RGBA()
+	x, y, z = x>>8, y>>8, z>>8
 	fmt.Println("should saveimage 2", x, y, z)
 	// save with new name
 	savePathArr := strings.Split(filePath, ".")
@@ -333,6 +344,11 @@ func spanImage(imageObject image.Image, configObject image.Config) (matrix [][][
 	for i := 0; i < h; i++ {
 		for j := 0; j < w; j++ {
 			r, g, b, _ := imageObject.At(i, j).RGBA() // returns rgba each in 16 bit alpha color
+			r, g, b = r>>8, g>>8, b>>8
+			if i == 0 && j == 0 {
+				fmt.Println("raw RGBA:", r, g, b)
+			}
+
 			//fmt.Printf("[X : %d Y : %v] R : %v, G : %v, B : %v, A : %v  \n", i, j, r, g, b, a)
 			matrix[i][j][0] = int(r)
 			matrix[i][j][1] = int(g)
@@ -371,7 +387,7 @@ func vectorToBits(v []int) (out string) {
 		out = "1100"
 	} else if v[0] == SIZE && v[1] == SIZE && v[2] == 0 {
 		out = "1101"
-	} else if v[0] == SIZE && v[1] == SIZE && v[2] == -1 {
+	} else if v[0] == SIZE && v[1] == SIZE && v[2] == -SIZE {
 		out = "1110"
 	} else if v[0] == SIZE && v[1] == SIZE && v[2] == SIZE {
 		out = "1111"
@@ -380,6 +396,7 @@ func vectorToBits(v []int) (out string) {
 }
 
 func main() {
+	fmt.Println("Memory:", mem)
 	file := "parrot.png"
 	err := encode(file, "Hello World!")
 	if err != nil {
