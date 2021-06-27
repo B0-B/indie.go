@@ -11,7 +11,6 @@ import (
 	"image"
 	"image/color"
 	_ "image/gif"
-	"image/jpeg"
 	_ "image/jpeg"
 	"image/png"
 	_ "image/png"
@@ -20,14 +19,16 @@ import (
 )
 
 // == parameters ==
-var __SIZE__ = 1
+var SIZE = 100
 
 type Changeable interface {
-	Set(x, y int, c color.RGBA64)
+	Set(x, y int, c color.Color)
 }
 
-type error interface {
-	Error() string
+type MyImg struct {
+	// Embed image.Image so MyImg will implement image.Image
+	// because fields and methods of Image will be promoted:
+	image.Image
 }
 
 // == functions ==
@@ -43,69 +44,69 @@ func bitsToVector(fourBitString string) (out [3]int) {
 	if len(fourBitString) != 4 {
 		fmt.Println("ERROR bitsToDiffVector: input must be 4 bit string")
 	} else if fourBitString == "0000" {
-		out[0] = 1
-		out[1] = -1
-		out[2] = -1
+		out[0] = SIZE
+		out[1] = -SIZE
+		out[2] = -SIZE
 	} else if fourBitString == "0001" {
 		out[0] = 0
 		out[1] = 0
-		out[2] = -1
+		out[2] = -SIZE
 	} else if fourBitString == "0010" {
 		out[0] = 0
 		out[1] = 0
-		out[2] = 1
+		out[2] = SIZE
 	} else if fourBitString == "0011" {
 		out[0] = 0
-		out[1] = -1
+		out[1] = -SIZE
 		out[2] = 0
 	} else if fourBitString == "0100" {
 		out[0] = 0
-		out[1] = -1
-		out[2] = -1
+		out[1] = -SIZE
+		out[2] = -SIZE
 	} else if fourBitString == "0101" {
 		out[0] = 0
-		out[1] = -1
-		out[2] = 1
+		out[1] = -SIZE
+		out[2] = SIZE
 	} else if fourBitString == "0110" {
 		out[0] = 0
-		out[1] = 1
+		out[1] = SIZE
 		out[2] = 0
 	} else if fourBitString == "0111" {
 		out[0] = 0
-		out[1] = 1
-		out[2] = -1
+		out[1] = SIZE
+		out[2] = -SIZE
 	} else if fourBitString == "1000" {
 		out[0] = 0
-		out[1] = 1
-		out[2] = 1
+		out[1] = SIZE
+		out[2] = SIZE
 	} else if fourBitString == "1001" {
-		out[0] = -1
+		out[0] = -SIZE
 		out[1] = 0
 		out[2] = 0
 	} else if fourBitString == "1010" {
-		out[0] = -1
+		out[0] = -SIZE
 		out[1] = 0
-		out[2] = -1
+		out[2] = -SIZE
 	} else if fourBitString == "1011" {
-		out[0] = -1
+		out[0] = -SIZE
 		out[1] = 0
-		out[2] = 1
+		out[2] = SIZE
 	} else if fourBitString == "1100" {
-		out[0] = 1
-		out[1] = -1
+		out[0] = SIZE
+		out[1] = -SIZE
 		out[2] = 0
 	} else if fourBitString == "1101" {
-		out[0] = 1
-		out[1] = 1
+		out[0] = SIZE
+		out[1] = SIZE
 		out[2] = 0
 	} else if fourBitString == "1110" {
-		out[0] = 1
-		out[1] = 1
-		out[2] = -1
+		out[0] = SIZE
+		out[1] = SIZE
+		out[2] = -SIZE
 	} else if fourBitString == "1111" {
-		out[0] = 1
-		out[1] = 1
-		out[2] = 1
+		out[0] = SIZE
+		out[1] = SIZE
+		out[2] = SIZE
 	}
 	return
 }
@@ -115,7 +116,7 @@ func capacity(matrix [][][]int) (out int) {
 	h, w := len(matrix), len(matrix[0])
 
 	// convert ascii string to binary
-	c := 0
+	pix := 0
 	for i := 0; i < h; i++ {
 		for j := 0; j < w; j++ {
 
@@ -123,20 +124,34 @@ func capacity(matrix [][][]int) (out int) {
 			g := matrix[i][j][1]
 			b := matrix[i][j][2]
 			// determine if pixel is too dark or too bright
-			if r > 65533 || r < 2 {
+			if r > 65535-SIZE || r < 2 {
 				// do nothing
-			} else if g > 65533 || g < 2 {
+			} else if g > 65535-SIZE || g < 2 {
 				// do nothing
-			} else if b > 65533 || b < 2 {
+			} else if b > 65535-SIZE || b < 2 {
 				// do nothing
 			} else {
-				// determine vector
-				c += 1
+				pix += 1
 			}
 		}
 	}
-	c /= 2
-	return c
+	availableSize := (2*SIZE + 1)
+	bitsPerPixel := 4
+	for i := 0; i < 8; i++ {
+		s := 2 ^ i
+		if s > availableSize {
+			bitsPerPixel = 2 ^ (i - 1)
+		}
+	}
+	bytes := int(bitsPerPixel * pix / 8)
+	fmt.Println("capacity", bytes)
+	return bytes
+}
+
+func check(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
 
 func decode(privatePath, publicPath string) string {
@@ -162,12 +177,19 @@ func decode(privatePath, publicPath string) string {
 			v[0] = m2[i][j][0] - m1[i][j][0]
 			v[1] = m2[i][j][1] - m1[i][j][1]
 			v[2] = m2[i][j][2] - m1[i][j][2]
+			if i < 3 && j < 3 {
+				fmt.Println("v", v)
+			}
+
+			if i == 0 && j == 0 {
+				fmt.Println("is", m2[i][j])
+			}
 			if v[0] == 0 && v[1] == 0 && v[2] == 0 {
 				// do nothing
-				fmt.Println(out, v, m2[i][j], m1[i][j])
+				//fmt.Println(out, v, m2[i][j], m1[i][j])
 			} else {
 				out += vectorToBits(v)
-				fmt.Println(out, v, m2[i][j], m1[i][j])
+				//fmt.Println(out, v, m2[i][j], m1[i][j])
 			}
 
 		}
@@ -181,6 +203,8 @@ func encode(filePath, plainText string) error {
 
 	// convert to matrix object
 	img, conf, err := loadImage(filePath)
+	r, g, b, _ := img.At(0, 0).RGBA()
+	fmt.Println("raw", r, g, b)
 	if err != nil {
 		return err
 	}
@@ -210,6 +234,7 @@ func encode(filePath, plainText string) error {
 				r := matrix[i][j][0]
 				g := matrix[i][j][1]
 				b := matrix[i][j][2]
+				//fmt.Println("before", r, g, b)
 				// determine if pixel is too dark or too bright
 				if r > 65533 || r < 2 {
 					// do nothing
@@ -220,18 +245,24 @@ func encode(filePath, plainText string) error {
 				} else {
 					// determine vector
 					v := bitsToVector(bin[(i*w+j)*4 : (i*w+j+1)*4])
+
 					// crop pixel
 					matrix[i][j][0] = r + v[0]
 					matrix[i][j][1] = g + v[1]
 					matrix[i][j][2] = b + v[2]
+					//fmt.Println("after", matrix[i][j])
+					if r != matrix[i][j][0] {
+						fmt.Println("change", matrix[i][j], r, g, b)
+					}
 				}
+
 			}
 		}
 		if breaker {
 			break
 		}
 	}
-
+	fmt.Println("should", matrix[0][0])
 	// save image
 	err = saveImage(filePath, matrix)
 	return err
@@ -257,49 +288,32 @@ func loadImage(filePath string) (image.Image, image.Config, error) {
 }
 
 func saveImage(filePath string, matrix [][][]int) error {
-	imgFile, err := os.Open(filePath)
-	if err != nil {
-		fmt.Println("indie saveImage ERROR:", err)
-		return err
-	}
-	defer imgFile.Close()
 
-	// choose right encoder
-	img, err := png.Decode(imgFile)
-	// img, err := jpeg.Decode(imgFile)
-	// if err != nil {
-	// 	img, err = png.Decode(imgFile)
-	// 	if err != nil {
-	// 		img, err = gif.Decode(imgFile)
-	// 		if err != nil {
-	// 			fmt.Println("indie Decode ERROR:", err)
-	// 			return err
-	// 		}
-	// 	}
-	// }
-	if cimg, ok := img.(Changeable); ok {
-		for i := 0; i < len(matrix); i++ {
-			for j := 0; j < len(matrix[0]); j++ {
-				c := matrix[i][j]
-				cimg.Set(j, i, color.RGBA64{uint16(c[0]), uint16(c[1]), uint16(c[2]), 65535})
+	// create a writable img type
+	cimg := image.NewRGBA(image.Rect(0, 0, len(matrix), len(matrix[0])))
+	fmt.Println("should saveimage", matrix[0][0])
+	for i := 0; i < len(matrix); i++ {
+		for j := 0; j < len(matrix[0]); j++ {
+			if i == 0 && j == 0 {
+				fmt.Println("uint16 encoding", uint16(matrix[i][j][0]), uint16(matrix[i][j][1]), uint16(matrix[i][j][2]))
 			}
+			cimg.Set(i, j, color.RGBA64{uint16(matrix[i][j][0]), uint16(matrix[i][j][1]), uint16(matrix[i][j][2]), 65535})
 		}
 	}
-
+	x, y, z, _ := cimg.At(0, 0).RGBA()
+	fmt.Println("should saveimage 2", x, y, z)
 	// save with new name
-	var opt jpeg.Options
-	opt.Quality = 100
 	savePathArr := strings.Split(filePath, ".")
 	pathArr := strings.Split(filePath, "/")
 	p := ""
 	for i := 0; i < len(pathArr)-1; i++ {
 		p += pathArr[i] + "/"
 	}
-	savePath, _ := os.Create(p + "indie." + savePathArr[len(savePathArr)-1])
-	err = png.Encode(savePath, img)
-	if err != nil {
-		fmt.Println("indie Encode ERROR:", err)
-	}
+	savePath, err := os.OpenFile(p+"indie."+savePathArr[len(savePathArr)-1], os.O_WRONLY|os.O_CREATE, 0600)
+	check(err)
+	defer savePath.Close()
+	err = png.Encode(savePath, cimg)
+	check(err)
 
 	return err
 }
@@ -329,37 +343,37 @@ func spanImage(imageObject image.Image, configObject image.Config) (matrix [][][
 }
 
 func vectorToBits(v []int) (out string) {
-	if v[0] == 1 && v[1] == -1 && v[2] == -1 {
+	if v[0] == SIZE && v[1] == -SIZE && v[2] == -SIZE {
 		out = "0000"
-	} else if v[0] == 0 && v[1] == 0 && v[2] == -1 {
+	} else if v[0] == 0 && v[1] == 0 && v[2] == -SIZE {
 		out = "0001"
-	} else if v[0] == 0 && v[1] == 0 && v[2] == 1 {
+	} else if v[0] == 0 && v[1] == 0 && v[2] == SIZE {
 		out = "0010"
-	} else if v[0] == 0 && v[1] == -1 && v[2] == 0 {
+	} else if v[0] == 0 && v[1] == -SIZE && v[2] == 0 {
 		out = "0011"
-	} else if v[0] == 0 && v[1] == -1 && v[2] == -1 {
+	} else if v[0] == 0 && v[1] == -SIZE && v[2] == -SIZE {
 		out = "0100"
-	} else if v[0] == 0 && v[1] == -1 && v[2] == 1 {
+	} else if v[0] == 0 && v[1] == -SIZE && v[2] == SIZE {
 		out = "0101"
-	} else if v[0] == 0 && v[1] == 1 && v[2] == 0 {
+	} else if v[0] == 0 && v[1] == SIZE && v[2] == 0 {
 		out = "0110"
-	} else if v[0] == 0 && v[1] == 1 && v[2] == -1 {
+	} else if v[0] == 0 && v[1] == SIZE && v[2] == -SIZE {
 		out = "0111"
-	} else if v[0] == 0 && v[1] == 1 && v[2] == 1 {
+	} else if v[0] == 0 && v[1] == SIZE && v[2] == SIZE {
 		out = "1000"
-	} else if v[0] == -1 && v[1] == 0 && v[2] == 0 {
+	} else if v[0] == -SIZE && v[1] == 0 && v[2] == 0 {
 		out = "1001"
-	} else if v[0] == -1 && v[1] == 0 && v[2] == -1 {
+	} else if v[0] == -SIZE && v[1] == 0 && v[2] == -SIZE {
 		out = "1010"
-	} else if v[0] == -1 && v[1] == 0 && v[2] == 1 {
+	} else if v[0] == -SIZE && v[1] == 0 && v[2] == SIZE {
 		out = "1011"
-	} else if v[0] == 1 && v[1] == -1 && v[2] == 0 {
+	} else if v[0] == SIZE && v[1] == -SIZE && v[2] == 0 {
 		out = "1100"
-	} else if v[0] == 1 && v[1] == 1 && v[2] == 0 {
+	} else if v[0] == SIZE && v[1] == SIZE && v[2] == 0 {
 		out = "1101"
-	} else if v[0] == 1 && v[1] == 1 && v[2] == -1 {
+	} else if v[0] == SIZE && v[1] == SIZE && v[2] == -1 {
 		out = "1110"
-	} else if v[0] == 1 && v[1] == 1 && v[2] == 1 {
+	} else if v[0] == SIZE && v[1] == SIZE && v[2] == SIZE {
 		out = "1111"
 	}
 	return
