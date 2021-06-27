@@ -144,14 +144,14 @@ func capacity(matrix [][][]int) (out int) {
 			}
 		}
 	}
-	availableSize := (2*SIZE + 1)
+	//availableSize := (2*SIZE + 1)
 	bitsPerPixel := 4
-	for i := 0; i < 8; i++ {
-		s := int(math.Pow(2, float64(i)))
-		if s > availableSize {
-			bitsPerPixel = int(math.Pow(2, float64(i-1)))
-		}
-	}
+	// for i := 0; i < 8; i++ {
+	// 	s := int(math.Pow(2, float64(i)))
+	// 	if s > availableSize {
+	// 		bitsPerPixel = int(math.Pow(2, float64(i-1)))
+	// 	}
+	// }
 	bytes := int(bitsPerPixel * pix / 8)
 	fmt.Println("capacity:", bytes)
 	return bytes
@@ -182,9 +182,9 @@ func decode(privatePath, publicPath string) string {
 			v[0] = m2[i][j][0] - m1[i][j][0]
 			v[1] = m2[i][j][1] - m1[i][j][1]
 			v[2] = m2[i][j][2] - m1[i][j][2]
-			if i < 3 && j < 3 {
-				fmt.Println("v", v)
-			}
+			// if i < 3 && j < 3 {
+			// 	fmt.Println("v", v)
+			// }
 
 			if i == 0 && j == 0 {
 				fmt.Println("is", m2[i][j])
@@ -296,16 +296,9 @@ func saveImage(filePath string, matrix [][][]int) error {
 	fmt.Println("should saveimage", matrix[0][0])
 	for i := 0; i < len(matrix); i++ {
 		for j := 0; j < len(matrix[0]); j++ {
-			if i == 0 && j == 0 {
-				if bits == 8 {
-					fmt.Println("uint8 encoding", uint8(matrix[i][j][0]), uint8(matrix[i][j][1]), uint8(matrix[i][j][2]))
-					cimg.Set(i, j, color.RGBA{uint8(matrix[i][j][0]), uint8(matrix[i][j][1]), uint8(matrix[i][j][2]), 255})
-				}
-				// else if bits == 16 {
-				// 	fmt.Println("uint16 encoding", uint8(matrix[i][j][0]), uint8(matrix[i][j][1]), uint8(matrix[i][j][2]))
-				// 	cimg.Set(i, j, color.RGBA{uint16(matrix[i][j][0]), uint16(matrix[i][j][1]), uint16(matrix[i][j][2]), uint16(mem)})
-				// }
-
+			if bits == 8 {
+				//fmt.Println("uint8 encoding", uint8(matrix[i][j][0]), uint8(matrix[i][j][1]), uint8(matrix[i][j][2]))
+				cimg.Set(i, j, color.RGBA{uint8(matrix[i][j][0]), uint8(matrix[i][j][1]), uint8(matrix[i][j][2]), 255})
 			}
 
 		}
