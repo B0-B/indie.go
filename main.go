@@ -17,6 +17,7 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
+	"os/user"
 	"strconv"
 )
 
@@ -415,9 +416,9 @@ func main() {
 		} else {
 
 			// need to get target
-			home, err := os.UserHomeDir()
+			home, err := user.Current()
 			check(err)
-			target := home + "indie.jpg"
+			target := string(home.HomeDir) + "/indie.png"
 			if *t != "" {
 				target = *t
 			}
