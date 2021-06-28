@@ -154,14 +154,7 @@ func capacity(matrix [][][]int) (out int) {
 			}
 		}
 	}
-	//availableSize := (2*SIZE + 1)
 	bitsPerPixel := 4
-	// for i := 0; i < 8; i++ {
-	// 	s := int(math.Pow(2, float64(i)))
-	// 	if s > availableSize {
-	// 		bitsPerPixel = int(math.Pow(2, float64(i-1)))
-	// 	}
-	// }
 	bytes := int(bitsPerPixel * pix / 8)
 	return bytes
 }
@@ -233,9 +226,6 @@ func encode(filePath, targetPath, plainText string) error {
 
 	// convert ascii string to binary
 	bin := binary(plainText)
-
-	//fmt.Println("bin TEST", plainText, bin, ascii(bin))
-	//pixels := len(bin) / 4
 	breaker := false
 	encodedString := ""
 	for i := 0; i < h; i++ {
@@ -243,7 +233,6 @@ func encode(filePath, targetPath, plainText string) error {
 			r := matrix[i][j][0]
 			g := matrix[i][j][1]
 			b := matrix[i][j][2]
-			//fmt.Println("before", r, g, b)
 			// determine if pixel is too dark or too bright
 			if r > mem-SIZE-1 || r < 2 {
 				// do nothing
@@ -261,10 +250,6 @@ func encode(filePath, targetPath, plainText string) error {
 				matrix[i][j][0] = r + v[0]
 				matrix[i][j][1] = g + v[1]
 				matrix[i][j][2] = b + v[2]
-				//fmt.Println("after", matrix[i][j])
-				// if r != matrix[i][j][0] {
-				// 	fmt.Println("change", matrix[i][j], r, g, b)
-				// }
 			}
 			if encodedString == bin {
 				breaker = true
@@ -275,8 +260,6 @@ func encode(filePath, targetPath, plainText string) error {
 			break
 		}
 	}
-	// fmt.Println("should", matrix[0][0])
-	// save image
 	err = saveImage(targetPath, matrix)
 	return err
 }
@@ -297,11 +280,9 @@ func saveImage(filePath string, matrix [][][]int) error {
 
 	// create a writable img type
 	cimg := image.NewRGBA(image.Rect(0, 0, len(matrix), len(matrix[0])))
-	// fmt.Println("should saveimage", matrix[0][0])
 	for i := 0; i < len(matrix); i++ {
 		for j := 0; j < len(matrix[0]); j++ {
 			if bits == 8 {
-				//fmt.Println("uint8 encoding", uint8(matrix[i][j][0]), uint8(matrix[i][j][1]), uint8(matrix[i][j][2]))
 				cimg.Set(i, j, color.RGBA{uint8(matrix[i][j][0]), uint8(matrix[i][j][1]), uint8(matrix[i][j][2]), 255})
 			}
 
@@ -309,14 +290,6 @@ func saveImage(filePath string, matrix [][][]int) error {
 	}
 	x, y, z, _ := cimg.At(0, 0).RGBA()
 	x, y, z = x>>8, y>>8, z>>8
-	// fmt.Println("should saveimage 2", x, y, z)
-	// save with new name
-	// savePathArr := strings.Split(filePath, ".")
-	// pathArr := strings.Split(filePath, "/")
-	// p := ""
-	// for i := 0; i < len(pathArr)-1; i++ {
-	// 	p += pathArr[i] + "/"
-	// }
 	savePath, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0600)
 	check(err)
 	defer savePath.Close()
@@ -477,19 +450,6 @@ func main() {
 
 		}
 	}
-
-	// 	fmt.Println("Memory:", mem)
-	// 	file := "parrot.png"
-	// 	err := encode(file, "Hello World!a")
-	// 	if err != nil {
-	// 		fmt.Println("Error in encoding:", err)
-	// 	} else {
-	// 		fmt.Println(file, "encoded.")
-	// 	}
-	// 	decode(file, "indie.png")
-	// 	if err != nil {
-	// 		fmt.Println("Error in decoding:", err)
-	// 	}
 }
 
 // how to run
