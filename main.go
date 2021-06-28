@@ -19,6 +19,7 @@ import (
 	"os"
 	"os/user"
 	"strconv"
+	"golang.org/x/exp/rand"
 )
 
 // == parameters ==
@@ -179,27 +180,27 @@ func decode(privatePath, publicPath string) string {
 		fmt.Println("indie compatibility ERROR")
 	}
 	out := ""
+	breaker := false
 	for i := 0; i < len(m1); i++ {
 		for j := 0; j < len(m1[0]); j++ {
 			v := make([]int, 3)
 			v[0] = m2[i][j][0] - m1[i][j][0]
 			v[1] = m2[i][j][1] - m1[i][j][1]
 			v[2] = m2[i][j][2] - m1[i][j][2]
-			// if i < 3 && j < 3 {
-			// 	fmt.Println("v", v)
-			// }
-
-			// if i == 0 && j == 0 {
-			// 	fmt.Println("is", m2[i][j])
-			// }
 			if v[0] == 0 && v[1] == 0 && v[2] == 0 {
 				// do nothing
-				//fmt.Println(out, v, m2[i][j], m1[i][j])
 			} else {
-				out += vectorToBits(v)
-				//fmt.Println(out, v, m2[i][j], m1[i][j])
+				chunk := vectorToBits(v)
+				if chunk == "" {
+					breaker = true
+					break
+				} else {
+					out += chunk
+				}
 			}
-
+		}
+		if breaker {
+			break
 		}
 	}
 	//fmt.Println("decoded:", out, ascii(out))
@@ -227,39 +228,72 @@ func encode(filePath, targetPath, plainText string) error {
 
 	// convert ascii string to binary
 	bin := binary(plainText)
-	breaker := false
+	//breaker := false
 	encodedString := ""
 	for i := 0; i < h; i++ {
 		for j := 0; j < w; j++ {
-			r := matrix[i][j][0]
-			g := matrix[i][j][1]
-			b := matrix[i][j][2]
-			// determine if pixel is too dark or too bright
-			if r > mem-SIZE-1 || r < 2 {
-				// do nothing
-			} else if g > mem-SIZE-1 || g < 2 {
-				// do nothing
-			} else if b > mem-SIZE-1 || b < 2 {
-				// do nothing
-			} else {
-				// determine vector
-				chunk := bin[(i*w+j)*4 : (i*w+j+1)*4] // 4 bit chunk
-				encodedString += chunk
-				v := bitsToVector(chunk)
+			
+				r := matrix[i][j][0]
+				g := matrix[i][j][1]
+				b := matrix[i][j][2]
+				// determine if pixel is too dark or too bright
+				if r > mem-SIZE-1 || r < 2 {
+					// do nothing
+				} else if g > mem-SIZE-1 || g < 2 {
+					// do nothing
+				} else if b > mem-SIZE-1 || b < 2 {
+					// do nothing
+				} else {
+					if encodedString != bin {
 
-				// crop pixel
-				matrix[i][j][0] = r + v[0]
-				matrix[i][j][1] = g + v[1]
-				matrix[i][j][2] = b + v[2]
-			}
-			if encodedString == bin {
-				breaker = true
-				break
-			}
+						// determine vector
+						chunk := bin[(i*w+j)*4 : (i*w+j+1)*4] // 4 bit chunk
+						encodedString += chunk
+						v := bitsToVector(chunk)
+
+						// crop pixel
+						matrix[i][j][0] = r + v[0]
+						matrix[i][j][1] = g + v[1]
+						matrix[i][j][2] = b + v[2]
+				
+					} else {
+						/* add obscuring combination e.g. -SIZE,SIZE,-SIZE which have no effect */
+						// sample a random vector which has not effect
+						u := rand.Float64()
+						// crop pixel
+						if u < 0.2 {
+							matrix[i][j][0] = r - SIZE
+							matrix[i][j][1] = g + SIZE
+							matrix[i][j][2] = b - SIZE
+						} else if u < 0.4 {
+							matrix[i][j][0] = r - SIZE
+							matrix[i][j][1] = g - SIZE
+							matrix[i][j][2] = b - SIZE
+						} else if u < 0.6 {
+							matrix[i][j][0] = r - SIZE
+							matrix[i][j][2] = b - SIZE
+						} else if u < 0.6 {
+							matrix[i][j][0] = r - SIZE
+							matrix[i][j][2] = b - SIZE
+						} else if u < 0.8 {
+							matrix[i][j][0] = r + SIZE
+							matrix[i][j][2] = b - SIZE
+						} else {
+							matrix[i][j][0] = r + SIZE
+							matrix[i][j][2] = b + SIZE
+						}
+						
+					}
+				}
+			
+			// if encodedString == bin {
+			// 	breaker = true
+			// 	break
+			// }
 		}
-		if breaker {
-			break
-		}
+		// if breaker {
+		// 	break
+		// }
 	}
 	err = saveImage(targetPath, matrix)
 	return err
@@ -362,7 +396,11 @@ func vectorToBits(v []int) (out string) {
 		out = "1110"
 	} else if v[0] == SIZE && v[1] == SIZE && v[2] == SIZE {
 		out = "1111"
+	} else {
+		out = ""
 	}
+
+	
 	return
 }
 
@@ -440,12 +478,13 @@ func main() {
 				err := encode(*o, target, plainText)
 				check(err)
 			} else if *d {
+				fmt.Println("Decrypt text from", *t, "using original", *o, "image.")
 				secret := decode(*o, target)
 				if *w != "" {
-					ioutil.WriteFile(*w, []byte(secret), 0644)
+					ioutil.WriteFile(*w, []byte(ascii(secret)), 0644)
 
 				} else {
-					fmt.Println("Secret:", ascii(secret))
+					fmt.Println("\n------------- secret --------------\n\t", ascii(secret), "\n-----------------------------------")
 				}
 			}
 
