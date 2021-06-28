@@ -6,6 +6,7 @@ Indie is a steganographic program which hides text into images.
 package main
 
 import (
+	"flag"
 	"fmt"
 	"image"
 	"image/color"
@@ -13,10 +14,10 @@ import (
 	_ "image/jpeg"
 	"image/png"
 	_ "image/png"
+	"io/ioutil"
 	"math"
 	"os"
 	"strconv"
-	"strings"
 )
 
 // == parameters ==
@@ -28,6 +29,18 @@ var mem = int(math.Pow(2, float64(bits))) - 1
 type Changeable interface {
 	Set(x, y int, c color.Color)
 }
+type arrayFlags []string
+
+func (i *arrayFlags) String() string {
+	return "my string representation"
+}
+
+func (i *arrayFlags) Set(value string) error {
+	*i = append(*i, value)
+	return nil
+}
+
+var myFlags arrayFlags
 
 // == functions ==
 func ascii(s string) string {
@@ -150,7 +163,6 @@ func capacity(matrix [][][]int) (out int) {
 	// 	}
 	// }
 	bytes := int(bitsPerPixel * pix / 8)
-	fmt.Println("capacity: ", bytes, " Bytes")
 	return bytes
 }
 
@@ -201,7 +213,7 @@ func decode(privatePath, publicPath string) string {
 	return out
 }
 
-func encode(filePath, plainText string) error {
+func encode(filePath, targetPath, plainText string) error {
 
 	// convert to matrix object
 	img, conf, err := loadImage(filePath)
@@ -265,7 +277,7 @@ func encode(filePath, plainText string) error {
 	}
 	// fmt.Println("should", matrix[0][0])
 	// save image
-	err = saveImage(filePath, matrix)
+	err = saveImage(targetPath, matrix)
 	return err
 }
 
@@ -299,13 +311,13 @@ func saveImage(filePath string, matrix [][][]int) error {
 	x, y, z = x>>8, y>>8, z>>8
 	// fmt.Println("should saveimage 2", x, y, z)
 	// save with new name
-	savePathArr := strings.Split(filePath, ".")
-	pathArr := strings.Split(filePath, "/")
-	p := ""
-	for i := 0; i < len(pathArr)-1; i++ {
-		p += pathArr[i] + "/"
-	}
-	savePath, err := os.OpenFile(p+"indie."+savePathArr[len(savePathArr)-1], os.O_WRONLY|os.O_CREATE, 0600)
+	// savePathArr := strings.Split(filePath, ".")
+	// pathArr := strings.Split(filePath, "/")
+	// p := ""
+	// for i := 0; i < len(pathArr)-1; i++ {
+	// 	p += pathArr[i] + "/"
+	// }
+	savePath, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0600)
 	check(err)
 	defer savePath.Close()
 	err = png.Encode(savePath, cimg)
@@ -380,17 +392,105 @@ func vectorToBits(v []int) (out string) {
 	return
 }
 
-func main() {
-	fmt.Println("Memory:", mem)
-	file := "parrot.png"
-	err := encode(file, "Hello World!a")
-	if err != nil {
-		fmt.Println("Error in encoding:", err)
-	} else {
-		fmt.Println(file, "encoded.")
-	}
-	decode(file, "indie.png")
-	if err != nil {
-		fmt.Println("Error in decoding:", err)
-	}
+// == CL flags ==
+var (
+	c *bool
+	o *string
+	t *string
+	e *bool
+	d *bool
+	f *string
+	s *string
+	w *string
+)
+
+func init() {
+	c = flag.Bool("c", false, "Prints available capacity in bytes.")
+	o = flag.String("o", "", "Original image path to use for encryption.")
+	t = flag.String("t", "", "Specify target path (optional).")
+	f = flag.String("f", "", "Draw text from file path.")
+	e = flag.Bool("e", false, "Encrypt option.")
+	d = flag.Bool("d", false, "Decrypt option.")
+	s = flag.String("s", "", "Draw text from CL string input.")
+	w = flag.String("w", "", "Write the output to a file instead of terminal.")
 }
+
+func main() {
+
+	flag.Parse()
+	fmt.Println("-------- DEV OUTPUT --------")
+	fmt.Println("original path:", *o)
+	fmt.Println("capacity:", *c)
+	fmt.Println("target:", *t)
+	fmt.Println("encrypt:", *e)
+	fmt.Println("decrypt:", *d)
+	fmt.Println("write result:", *w)
+	fmt.Println("----------------------------")
+
+	// try to load original
+	if *o != "" {
+		img, conf, err := loadImage(*o)
+		check(err)
+		matrix := spanImage(img, conf)
+
+		if *c {
+			fmt.Println("Capacity (", *o, "): ", capacity(matrix), " bytes")
+		}
+
+		if *d && *e {
+			fmt.Println("Please choose either decrypt '-d' or encrypt '-e' flag option.")
+		} else {
+
+			// need to get target
+			home, err := os.UserHomeDir()
+			check(err)
+			target := home + "indie.jpg"
+			if *t != "" {
+				target = *t
+			}
+
+			if *e {
+
+				fmt.Println("Encrypt text into", *t, "using original", *o, "image.")
+
+				// and plain text
+				plainText := ""
+				if *s != "" {
+					plainText = *s
+				} else if *f != "" {
+					content, err := ioutil.ReadFile(*f)
+					check(err)
+					plainText = string(content)
+				}
+
+				err := encode(*o, target, plainText)
+				check(err)
+			} else if *d {
+				secret := decode(*o, target)
+				if *w != "" {
+					ioutil.WriteFile(*w, []byte(secret), 0644)
+
+				} else {
+					fmt.Println("Secret:", ascii(secret))
+				}
+			}
+
+		}
+	}
+
+	// 	fmt.Println("Memory:", mem)
+	// 	file := "parrot.png"
+	// 	err := encode(file, "Hello World!a")
+	// 	if err != nil {
+	// 		fmt.Println("Error in encoding:", err)
+	// 	} else {
+	// 		fmt.Println(file, "encoded.")
+	// 	}
+	// 	decode(file, "indie.png")
+	// 	if err != nil {
+	// 		fmt.Println("Error in decoding:", err)
+	// 	}
+}
+
+// how to run
+// go run main.go -c -o=parrot.png
