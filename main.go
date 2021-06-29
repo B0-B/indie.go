@@ -20,6 +20,7 @@ import (
 	"os/user"
 	"strconv"
 	"math/rand"
+	//"unicode/utf8"
 )
 
 var __version__ = "1.0.0"
@@ -49,7 +50,9 @@ var myFlags arrayFlags
 // == functions ==
 func ascii(s string) string {
 	res := ""
-	for i := 0; i < len(s); i += 8 {
+	//fmt.Println("length", len(s))
+	for i := 0; i < len(s)-(len(s)%8); i += 8 {
+		//fmt.Println(i, i+8)
 		sub := s[i : i+8]
 		integer, err := strconv.ParseInt(sub, 2, 64)
 		check(err)
@@ -57,6 +60,7 @@ func ascii(s string) string {
 	}
 	return res
 }
+
 func binary(s string) string {
 	res := ""
 	for _, c := range s {
@@ -205,7 +209,7 @@ func decode(privatePath, publicPath string) string {
 			break
 		}
 	}
-	//fmt.Println("decoded:", out, ascii(out))
+	fmt.Println("second:", out, ascii(out))
 
 	return out
 }
@@ -230,6 +234,7 @@ func encode(filePath, targetPath, plainText string) error {
 
 	// convert ascii string to binary
 	bin := binary(plainText)
+	fmt.Println("first", bin)
 	//breaker := false
 	encodedString := ""
 	for i := 0; i < h; i++ {
@@ -243,11 +248,11 @@ func encode(filePath, targetPath, plainText string) error {
 				g := matrix[i][j][1]
 				b := matrix[i][j][2]
 				// determine if pixel is too dark or too bright
-				if r > mem-SIZE-1 || r < 2 {
+				if r > mem-SIZE-1 || r < SIZE + 1 {
 					// do nothing
-				} else if g > mem-SIZE-1 || g < 2 {
+				} else if g > mem-SIZE-1 || g < SIZE + 1 {
 					// do nothing
-				} else if b > mem-SIZE-1 || b < 2 {
+				} else if b > mem-SIZE-1 || b < SIZE + 1 {
 					// do nothing
 				} else {
 					//fmt.Println(len(bin), len(encodedString), (i*w+j)*4)
@@ -407,7 +412,6 @@ func vectorToBits(v []int) (out string) {
 		out = ""
 	}
 
-	
 	return
 }
 
@@ -447,6 +451,7 @@ func init() {
 func main() {
 
 	flag.Parse()
+
 	fmt.Println("-------- DEV OUTPUT --------")
 	fmt.Println("original path:", *o)
 	fmt.Println("capacity:", *c)
@@ -457,56 +462,61 @@ func main() {
 	fmt.Println("----------------------------")
 
 	// try to load original
+	if *h {
+		fmt.Println("indie help options:")
+		Usage()
+	}
+
 	if *o != "" {
 		img, conf, err := loadImage(*o)
 		check(err)
 		matrix := spanImage(img, conf)
 
-		if *h {
-			fmt.Println("indie help options:")
-			Usage()
+		
+		if *c {
+			fmt.Println("Capacity (", *o, "): ", capacity(matrix), " bytes")
+		}
+	
+		if *d && *e {
+			fmt.Println("Please choose either decrypt '-d' or encrypt '-e' flag option.")
 		} else {
-			if *c {
-				fmt.Println("Capacity (", *o, "): ", capacity(matrix), " bytes")
+	
+			// need to get target
+			home, err := user.Current()
+			check(err)
+			target := string(home.HomeDir) + "/indie.png"
+			fmt.Println("encode check:", ascii(binary("Hello World!")))
+			if *t != "" {
+				target = *t
 			}
 	
-			if *d && *e {
-				fmt.Println("Please choose either decrypt '-d' or encrypt '-e' flag option.")
-			} else {
+			if *e {
 	
-				// need to get target
-				home, err := user.Current()
-				check(err)
-				target := string(home.HomeDir) + "/indie.png"
-				if *t != "" {
-					target = *t
+				fmt.Println("Encrypt text into", *t, "using original", *o, "image.")
+	
+				// and plain text
+				plainText := ""
+				if *s != "" {
+					plainText = *s
+				} else if *f != "" {
+					content, err := ioutil.ReadFile(*f)
+					check(err)
+					plainText = string(content)
+					fmt.Println(plainText)
+					fmt.Println(ascii(binary(plainText)))
 				}
 	
-				if *e {
+				err := encode(*o, target, plainText)
+				check(err)
+			} else if *d {
+				fmt.Println("Decrypt text from", *t, "using original", *o, "image.")
+				secret := decode(*o, target)
+				
+				if *w != "" {
+					ioutil.WriteFile(*w, []byte(ascii(secret)), 0644)
 	
-					fmt.Println("Encrypt text into", *t, "using original", *o, "image.")
-	
-					// and plain text
-					plainText := ""
-					if *s != "" {
-						plainText = *s
-					} else if *f != "" {
-						content, err := ioutil.ReadFile(*f)
-						check(err)
-						plainText = string(content)
-					}
-	
-					err := encode(*o, target, plainText)
-					check(err)
-				} else if *d {
-					fmt.Println("Decrypt text from", *t, "using original", *o, "image.")
-					secret := decode(*o, target)
-					if *w != "" {
-						ioutil.WriteFile(*w, []byte(ascii(secret)), 0644)
-	
-					} else {
-						fmt.Println("\n------------- secret --------------\n\t", ascii(secret), "\n-----------------------------------")
-					}
+				} else {
+					fmt.Println("\n------------- secret --------------\n\t", ascii(secret), "\n-----------------------------------")
 				}
 			}
 		}		
