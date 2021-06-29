@@ -19,8 +19,10 @@ import (
 	"os"
 	"os/user"
 	"strconv"
-	"golang.org/x/exp/rand"
+	"math/rand"
 )
+
+var __version__ = "1.0.0"
 
 // == parameters ==
 var SIZE = 1
@@ -414,8 +416,16 @@ var (
 	f *string
 	s *string
 	w *string
+	h *bool
+	v *bool
 )
 
+var Usage = func() {
+	fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+	flag.PrintDefaults()
+}
+
+// == main ==
 func init() {
 	c = flag.Bool("c", false, "Prints available capacity in bytes.")
 	o = flag.String("o", "", "Original image path to use for encryption.")
@@ -425,6 +435,8 @@ func init() {
 	d = flag.Bool("d", false, "Decrypt option.")
 	s = flag.String("s", "", "Draw text from CL string input.")
 	w = flag.String("w", "", "Write the output to a file instead of terminal.")
+	h = flag.Bool("h", false, "Help - prints all options.")
+	v = flag.Bool("v", false, "Outputs the current version.")
 }
 
 func main() {
@@ -445,50 +457,54 @@ func main() {
 		check(err)
 		matrix := spanImage(img, conf)
 
-		if *c {
-			fmt.Println("Capacity (", *o, "): ", capacity(matrix), " bytes")
-		}
-
-		if *d && *e {
-			fmt.Println("Please choose either decrypt '-d' or encrypt '-e' flag option.")
+		if *h {
+			fmt.Println("indie help options:")
+			Usage()
 		} else {
-
-			// need to get target
-			home, err := user.Current()
-			check(err)
-			target := string(home.HomeDir) + "/indie.png"
-			if *t != "" {
-				target = *t
+			if *c {
+				fmt.Println("Capacity (", *o, "): ", capacity(matrix), " bytes")
 			}
-
-			if *e {
-
-				fmt.Println("Encrypt text into", *t, "using original", *o, "image.")
-
-				// and plain text
-				plainText := ""
-				if *s != "" {
-					plainText = *s
-				} else if *f != "" {
-					content, err := ioutil.ReadFile(*f)
-					check(err)
-					plainText = string(content)
-				}
-
-				err := encode(*o, target, plainText)
+	
+			if *d && *e {
+				fmt.Println("Please choose either decrypt '-d' or encrypt '-e' flag option.")
+			} else {
+	
+				// need to get target
+				home, err := user.Current()
 				check(err)
-			} else if *d {
-				fmt.Println("Decrypt text from", *t, "using original", *o, "image.")
-				secret := decode(*o, target)
-				if *w != "" {
-					ioutil.WriteFile(*w, []byte(ascii(secret)), 0644)
-
-				} else {
-					fmt.Println("\n------------- secret --------------\n\t", ascii(secret), "\n-----------------------------------")
+				target := string(home.HomeDir) + "/indie.png"
+				if *t != "" {
+					target = *t
+				}
+	
+				if *e {
+	
+					fmt.Println("Encrypt text into", *t, "using original", *o, "image.")
+	
+					// and plain text
+					plainText := ""
+					if *s != "" {
+						plainText = *s
+					} else if *f != "" {
+						content, err := ioutil.ReadFile(*f)
+						check(err)
+						plainText = string(content)
+					}
+	
+					err := encode(*o, target, plainText)
+					check(err)
+				} else if *d {
+					fmt.Println("Decrypt text from", *t, "using original", *o, "image.")
+					secret := decode(*o, target)
+					if *w != "" {
+						ioutil.WriteFile(*w, []byte(ascii(secret)), 0644)
+	
+					} else {
+						fmt.Println("\n------------- secret --------------\n\t", ascii(secret), "\n-----------------------------------")
+					}
 				}
 			}
-
-		}
+		}		
 	}
 }
 
