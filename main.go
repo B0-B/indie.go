@@ -234,7 +234,11 @@ func encode(filePath, targetPath, plainText string) error {
 	encodedString := ""
 	for i := 0; i < h; i++ {
 		for j := 0; j < w; j++ {
-			
+				if i == h-1 {
+					if j == w-5 {
+						break
+					}
+				}
 				r := matrix[i][j][0]
 				g := matrix[i][j][1]
 				b := matrix[i][j][2]
@@ -246,8 +250,9 @@ func encode(filePath, targetPath, plainText string) error {
 				} else if b > mem-SIZE-1 || b < 2 {
 					// do nothing
 				} else {
-					if encodedString != bin {
-
+					//fmt.Println(len(bin), len(encodedString), (i*w+j)*4)
+					if (i*w+j+1)*4 <= len(bin) {
+						//fmt.Println("entered")
 						// determine vector
 						chunk := bin[(i*w+j)*4 : (i*w+j+1)*4] // 4 bit chunk
 						encodedString += chunk
