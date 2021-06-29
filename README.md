@@ -11,13 +11,26 @@ Indie involves no passwords one needs to memorize! If an original image is picke
 
 <br>
 
-## Getting Started
+## Setup
 
-If you are using indie with [go](https://golang.org/) make sure to have it installed
+If you are using indie with [go](https://golang.org/) make sure to have it installed.
+For Ubuntu/Debian use for instance
 ```bash
+sudo add-apt-repository ppa:longsleep/golang-backports
+sudo apt update
+sudo apt install golang-go
+```
+see [here](https://golang.org/dl/) for custom OS installers.
 
+Next, [download indie](https://github.com/B0-B/indie.go/archive/refs/heads/master.zip) or clone repository
+```bash
+git clone https://github.com/B0-B/indie.go.git
+cd /indie.go
 ```
 
+<br>
+
+## Getting Started
 The typical <strong>encryption line</strong>
 ```bash
 go run indie.go -c -e -o /path/to/original/file.png -t /optional/target/path.png -s "Confidential Hello World!" 
@@ -39,19 +52,15 @@ The expected output should look like this
 ~$ go run indie.go -d -o /path/to/original/file.png -t /optional/target/path.png
 
 # output
--------- DEV OUTPUT --------
-original path: parrot.png
-capacity: true
-target: ./out.png
-encrypt: false
-decrypt: true
-write result: 
-----------------------------
-Capacity ( parrot.png ):  553352  bytes
 Decrypt text from ./out.png using original parrot.png image.
 
 ------------- secret --------------
     Confidential Hello World! 
 -----------------------------------
 ```
-note the encoded secret at the end.
+note the encoded secret at the end. Thats it!
+
+Please visit next section for usage parameters.
+
+## Usage
+
