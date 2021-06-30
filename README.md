@@ -2,6 +2,11 @@
 
 ---
 
+<p align=center>This complete README is encoded in below png file</p>
+
+<p align=center><img text-align="center" src="target.png"></p>
+
+
 A fast implementation to hide information into images. Each pixel is scanned for security and validity reasons and subsequently RGB tweaked to encode a secret text which lies in the difference between an original and target file. indie.go was developed as an alternative steganographic method with high memory capacity, negligible quality loss and high security.
 
 ### The advantage over password managers

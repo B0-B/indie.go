@@ -205,16 +205,12 @@ func decode(privatePath, publicPath string) string {
 					break
 				}
 			} 
-			if j < 50 {
-				fmt.Println(v, chunk, i, j)
-			}
 		}
 		if breaker {
 			// stop decoding
 			break
 		}
 	}
-	fmt.Println("second:", out, ascii(out))
 
 	return out
 }
@@ -239,7 +235,6 @@ func encode(filePath, targetPath, plainText string) error {
 
 	// convert ascii string to binary
 	bin := binary(plainText)
-	fmt.Println("first", bin)
 	increment := 0
 	encodedString := ""
 	for i := 0; i < h; i++ {
@@ -482,13 +477,10 @@ func main() {
 		if *d && *e {
 			fmt.Println("Please choose either decrypt '-d' or encrypt '-e' flag option.")
 		} else {
-	
 			// need to get target
 			home, err := user.Current()
 			check(err)
 			target := string(home.HomeDir) + "/indie.png"
-			fmt.Println("encode check:", ascii("00100111"), "00100111")
-			fmt.Println("encode check:", binary(" "))
 			if *t != "" {
 				target = *t
 			}
@@ -505,8 +497,6 @@ func main() {
 					content, err := ioutil.ReadFile(*f)
 					check(err)
 					plainText = string(content)
-					fmt.Println(plainText)
-					fmt.Println(ascii(binary(plainText)))
 				}
 	
 				err := encode(*o, target, plainText)
