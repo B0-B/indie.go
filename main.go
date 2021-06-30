@@ -186,6 +186,7 @@ func decode(privatePath, publicPath string) string {
 		fmt.Println("indie compatibility ERROR")
 	}
 	out := ""
+	
 	breaker := false
 	for i := 0; i < len(m1); i++ {
 		for j := 0; j < len(m1[0]); j++ {
@@ -193,19 +194,23 @@ func decode(privatePath, publicPath string) string {
 			v[0] = m2[i][j][0] - m1[i][j][0]
 			v[1] = m2[i][j][1] - m1[i][j][1]
 			v[2] = m2[i][j][2] - m1[i][j][2]
-			if v[0] == 0 && v[1] == 0 && v[2] == 0 {
-				// do nothing
-			} else {
-				chunk := vectorToBits(v)
-				if chunk == "" {
+			chunk := ""
+			if !(v[0] == 0 && v[1] == 0 && v[2] == 0) { // no changes within message bad pixels important!
+				// just pass difference to vectortobits function which will handle every type of difference
+				chunk = vectorToBits(v)
+				if chunk != "" {
+					out += chunk
+				} else {
 					breaker = true
 					break
-				} else {
-					out += chunk
 				}
+			} 
+			if j < 50 {
+				fmt.Println(v, chunk, i, j)
 			}
 		}
 		if breaker {
+			// stop decoding
 			break
 		}
 	}
@@ -235,7 +240,7 @@ func encode(filePath, targetPath, plainText string) error {
 	// convert ascii string to binary
 	bin := binary(plainText)
 	fmt.Println("first", bin)
-	//breaker := false
+	increment := 0
 	encodedString := ""
 	for i := 0; i < h; i++ {
 		for j := 0; j < w; j++ {
@@ -248,20 +253,17 @@ func encode(filePath, targetPath, plainText string) error {
 				g := matrix[i][j][1]
 				b := matrix[i][j][2]
 				// determine if pixel is too dark or too bright
-				if r > mem-SIZE-1 || r < SIZE + 1 {
-					// do nothing
-				} else if g > mem-SIZE-1 || g < SIZE + 1 {
-					// do nothing
-				} else if b > mem-SIZE-1 || b < SIZE + 1 {
-					// do nothing
+				if r > mem-SIZE-1 || r < SIZE + 1 || g > mem-SIZE-1 || g < SIZE + 1 || b > mem-SIZE-1 || b < SIZE + 1 {
+					// do nothing but raise increment
+					increment += 1
 				} else {
-					//fmt.Println(len(bin), len(encodedString), (i*w+j)*4)
-					if (i*w+j+1)*4 <= len(bin) {
-						//fmt.Println("entered")
+					if (i*w+j+1-increment)*4 <= len(bin) {
 						// determine vector
-						chunk := bin[(i*w+j)*4 : (i*w+j+1)*4] // 4 bit chunk
+						chunk := bin[(i*w+j-increment)*4 : (i*w+j+1-increment)*4] // 4 bit chunk
 						encodedString += chunk
 						v := bitsToVector(chunk)
+
+						//fmt.Println("final", v, chunk)
 
 						// crop pixel
 						matrix[i][j][0] = r + v[0]
@@ -485,7 +487,8 @@ func main() {
 			home, err := user.Current()
 			check(err)
 			target := string(home.HomeDir) + "/indie.png"
-			fmt.Println("encode check:", ascii(binary("Hello World!")))
+			fmt.Println("encode check:", ascii("00100111"), "00100111")
+			fmt.Println("encode check:", binary(" "))
 			if *t != "" {
 				target = *t
 			}
