@@ -12,7 +12,7 @@
 
 ---
 
-A fast implementation to hide information into images. Each pixel is scanned for security and validity reasons and subsequently RGB tweaked to encode a secret text which lies in the difference between an original and target file. indie.go was developed as an alternative steganographic method with high memory capacity, negligible quality loss and high security.
+A new implementation to hide information into images with high speed. Each pixel is scanned for security and validity reasons and subsequently RGB tweaked to encode a secret text which lies in the difference between an original and target file. indie.go was developed as an alternative steganographic method with high memory capacity, negligible quality loss and high security.
 
 ### The advantage over password managers
 Indie involves no passwords one needs to memorize! If an original image is picked, indie will draw it's information and encode the provided plain text then output a target file which looks like a copy of the original image. To decode your secret again indie will just need the original and target file path. Without the original image file the algorithm at hand is considered cryptographically secure by the [theorem of perfect secrecy](https://en.wikipedia.org/wiki/One-time_pad).
@@ -77,7 +77,7 @@ See the options for indie below. Note that the order is not necessary but is jus
 The options list is obtained by `-h` flag.
 
 ```bash
-~/indie.go$ go run main.go -h
+~/indie.go$ go run indie.go -h
 
  ____  _  _  ____  ____  ____ 
 (_  _)( \( )(  _ \(_  _)( ___)
@@ -86,10 +86,10 @@ The options list is obtained by `-h` flag.
            
 help options:
 
-        go run main.go [-h/-c/-vb/-e/-v] [-o original file] [-t target file] [-f/-w opt. output path]
+        go run indie.go [-h/-c/-vb/-e/-v] [-o original file] [-t target file] [-f/-w opt. output path]
 
 options within brackets can be used simulataneously
-Usage of /tmp/go-build871449367/b001/exe/main:
+
   -c    Prints available capacity in bytes.
   -d    Decrypt option.
   -e    Encrypt option.

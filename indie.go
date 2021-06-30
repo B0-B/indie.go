@@ -470,7 +470,7 @@ func main() {
  _)(_  )  (  )(_) )_)(_  )__) 
 (____)(_)\_)(____/(____)(____)
 	   `)
-		fmt.Println("help options:\n\n\tgo run main.go [-h/-c/-vb/-e/-v] [-o original file] [-t target file] [-f/-w opt. output path]\n\noptions within brackets can be used simulataneously")
+		fmt.Println("help options:\n\n\tgo run indie.go [-h/-c/-vb/-e/-v] [-o original file] [-t target file] [-f/-w opt. output path]\n\noptions within brackets can be used simulataneously")
 
 		Usage()
 	}
@@ -526,6 +526,3 @@ func main() {
 		}		
 	}
 }
-
-// how to run
-// go run main.go -c -o=parrot.png
