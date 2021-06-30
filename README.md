@@ -1,10 +1,16 @@
-<h2 align=center><strong>indie</strong></h2>
+<h2 align=center><strong>indie CLI</strong></h2>
 
 ---
 
-<p align=center>This complete README is encoded in the png file below</p>
-<p align=center><img text-align="center" src="target.png"></p>
+<br>
 
+<p align=center>This complete README is hidden <br> in the target.png file below</p>
+<p align=center><img text-align="center" src="target.png"></p>
+<p align=center>without the original readme.png <br>this could have also been a lie <br>as none could ever tell.</p>
+
+<br>
+
+---
 
 A fast implementation to hide information into images. Each pixel is scanned for security and validity reasons and subsequently RGB tweaked to encode a secret text which lies in the difference between an original and target file. indie.go was developed as an alternative steganographic method with high memory capacity, negligible quality loss and high security.
 
@@ -62,9 +68,9 @@ Decrypt text from ./out.png using original parrot.png image.
     Confidential Hello World! 
 -----------------------------------
 ```
-note the encoded secret at the end. Thats it!
+note the encoded secret at the end. Thats it! Please visit next section for usage parameters.
 
-Please visit next section for usage parameters.
+<br>
 
 ## Usage
 See the options for indie below. Note that the order is not necessary but is just a recommendation.
@@ -106,4 +112,4 @@ Usage of /tmp/go-build871449367/b001/exe/main:
 <br>
 
 # Upcoming
-* New formats like jpg and gif
+* New format encoders for jpg and gif compatibility
