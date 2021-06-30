@@ -6,8 +6,8 @@
 
 <p align=center>This complete README is hidden <br> in the target.png file below</p>
 <p align=center><img text-align="center" src="target.png"></p>
-<p align=center>without the original readme.png <br>this could have also been a lie <br>as none could ever tell.</p>
-
+<p align=center>without the original readme.png <br>this could have also been a lie <br>as none could ever tell. </p>
+<p align=center><br>Convince yourself & decrypt it<br> <strong>go run indie.go -d -o readme.png -t target.png</strong></p>
 <br>
 
 ---
