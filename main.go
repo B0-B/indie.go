@@ -424,6 +424,7 @@ var (
 	w *string
 	h *bool
 	v *bool
+	vb *bool
 )
 
 var Usage = func() {
@@ -443,24 +444,34 @@ func init() {
 	w = flag.String("w", "", "Write the output to a file instead of terminal.")
 	h = flag.Bool("h", false, "Help - prints all options.")
 	v = flag.Bool("v", false, "Outputs the current version.")
+	vb = flag.Bool("vb", false, "Verbose information. Helpful for debugging.")
 }
 
 func main() {
 
 	flag.Parse()
-
-	fmt.Println("-------- DEV OUTPUT --------")
-	fmt.Println("original path:", *o)
-	fmt.Println("capacity:", *c)
-	fmt.Println("target:", *t)
-	fmt.Println("encrypt:", *e)
-	fmt.Println("decrypt:", *d)
-	fmt.Println("write result:", *w)
-	fmt.Println("----------------------------")
+	if *vb{
+		fmt.Println("-------- DEV OUTPUT --------")
+		fmt.Println("original path:", *o)
+		fmt.Println("capacity:", *c)
+		fmt.Println("target:", *t)
+		fmt.Println("encrypt:", *e)
+		fmt.Println("decrypt:", *d)
+		fmt.Println("write result:", *w)
+		fmt.Println("----------------------------")
+	}
+	
 
 	// try to load original
 	if *h {
-		fmt.Println("indie help options:")
+		fmt.Println(`
+ ____  _  _  ____  ____  ____ 
+(_  _)( \( )(  _ \(_  _)( ___)
+ _)(_  )  (  )(_) )_)(_  )__) 
+(____)(_)\_)(____/(____)(____)
+	   `)
+		fmt.Println("help options:\n\n\tgo run main.go [-h/-c/-vb/-e/-v] [-o original file] [-t target file] [-f/-w opt. output path]\n\noptions within brackets can be used simulataneously")
+
 		Usage()
 	}
 

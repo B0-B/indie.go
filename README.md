@@ -2,8 +2,7 @@
 
 ---
 
-<p align=center>This complete README is encoded in below png file</p>
-
+<p align=center>This complete README is encoded in the png file below</p>
 <p align=center><img text-align="center" src="target.png"></p>
 
 
@@ -68,4 +67,43 @@ note the encoded secret at the end. Thats it!
 Please visit next section for usage parameters.
 
 ## Usage
+See the options for indie below. Note that the order is not necessary but is just a recommendation.
+The options list is obtained by `-h` flag.
 
+```bash
+~/indie.go$ go run main.go -h
+
+ ____  _  _  ____  ____  ____ 
+(_  _)( \( )(  _ \(_  _)( ___)
+ _)(_  )  (  )(_) )_)(_  )__) 
+(____)(_)\_)(____/(____)(____)
+           
+help options:
+
+        go run main.go [-h/-c/-vb/-e/-v] [-o original file] [-t target file] [-f/-w opt. output path]
+
+options within brackets can be used simulataneously
+Usage of /tmp/go-build871449367/b001/exe/main:
+  -c    Prints available capacity in bytes.
+  -d    Decrypt option.
+  -e    Encrypt option.
+  -f string
+        Draw text from file path.
+  -h    Help - prints all options.
+  -o string
+        Original image path to use for encryption.
+  -s string
+        Draw text from CL string input.
+  -t string
+        Specify target path (optional).
+  -v    Outputs the current version.
+  -vb
+        Verbose information. Helpful for debugging.
+  -w string
+        Write the output to a file instead of terminal.
+```
+
+<br>
+
+# Upcoming
+* New formats like jpg and gif
