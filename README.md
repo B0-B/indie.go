@@ -10,6 +10,7 @@
 <p align=center><br>Convince yourself & decrypt it<br> <strong>go run indie.go -d -o readme.png -t target.png</strong></p>
 <br>
 
+[![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Hide%20your%20secrets%20in%20images!&url=https://github.com/B0-B/indie.go&hashtags=cli,golang,encoding,images,steganography,encryption-decryption)
 ---
 
 A new implementation to hide information into images with high speed. Each pixel is scanned for security and validity reasons and subsequently RGB tweaked to encode a secret text which lies in the difference between an original and target file. indie.go was developed as an alternative steganographic method with high memory capacity, negligible quality loss and high security.
