@@ -1,6 +1,5 @@
-<h2 align=center><strong>indie CLI</strong></h2>
+<h1 align=center><strong>indie CLI</strong></h1>
 
----
 
 <br>
 
@@ -22,7 +21,13 @@ Indie involves no passwords one needs to memorize! If an original image is picke
 
 <br>
 
-## Performance Benchmarks
+# Branches
+- `master` Release Branch
+- `benchmark` Performance Benchmark Branch
+
+<br>
+
+# Performance Benchmarks
 
 | Capacity [bit/pixel] | Speed  |   |   |   |
 |---|---|---|---|---|
@@ -30,7 +35,7 @@ Indie involves no passwords one needs to memorize! If an original image is picke
 
 <br>
 
-## Setup
+# Setup
 
 If you are using indie with [go](https://golang.org/) make sure to have it installed.
 For Ubuntu/Debian use for instance
@@ -49,7 +54,7 @@ cd /indie.go
 
 <br>
 
-## Getting Started
+# Getting Started
 The typical <strong>encryption line</strong>
 ```bash
 go run indie.go -c -e -o /path/to/original/file.png -t /optional/target/path.png -s "Confidential Hello World!" 
