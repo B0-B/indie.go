@@ -22,6 +22,14 @@ Indie involves no passwords one needs to memorize! If an original image is picke
 
 <br>
 
+## Performance Benchmarks
+
+| Capacity [bit/pixel] | Speed  |   |   |   |
+|---|---|---|---|---|
+| 4 |  - |   |   |   |
+
+<br>
+
 ## Setup
 
 If you are using indie with [go](https://golang.org/) make sure to have it installed.
