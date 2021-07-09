@@ -86,7 +86,7 @@ note the encoded secret at the end. Thats it! Please visit next section for usag
 
 <br>
 
-## Usage
+# Usage
 See the options for indie below. Note that the order is not necessary but is just a recommendation.
 The options list is obtained by `-h` flag.
 
