@@ -21,4 +21,4 @@ To demonstrate a typical speed test the image above contains an appropriate amou
 |  Storage Cap. [KB] |  1.25 | 31.3  | 125  | 281  |  553 |  2000 | 12500  | 
 |  Original Size [KB] | 4.6  | 87.8  |  412 | 795  | 1600  | 4700  | 22700  |
 
-<p align=center><img src='./plots/performanceGraphs.png' height=500></p>
+<p align=center><img src='./plots/performanceGraphs.png'></p>
