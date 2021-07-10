@@ -15,8 +15,10 @@ A low energy demand is reached by harvesting natural entropy from an original im
 ## Speed to Size Dependence
 To demonstrate a typical speed test the image above contains an appropriate amount of entropy and intrinsic storage capacity <strong>553352 Bytes</strong> (100%). The metrics below were executed on a virtual machine with 4 CPU threads.
 
-|  Size [px] | 50  |  250 |  500 |  750 | 1052 | 2000 | 5000 |
+|  Height [px] | 50  |  250 |  500 |  750 | 1052 | 2000 | 5000 |
 |---|---|---|---|---|---|---|---|
 | Encryption Time  [s]| .208  | .271 | .413  | .602  | .886 | 3.54  | 9.52  |
 |  Storage Cap. [KB] |  1.25 | 31.3  | 125  | 281  |  553 |  2000 | 12500  | 
 |  Original Size [KB] | 4.6  | 87.8  |  412 | 795  | 1600  | 4700  | 22700  |
+
+<p align=center><img src='./plots/performanceGraphs.png' height=500></p>
