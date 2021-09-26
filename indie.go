@@ -221,23 +221,9 @@ func encode(filePath, targetPath, plainText string) error {
 	img, conf, err := loadImage(filePath)
 	r, g, b, _ := img.At(0, 0).RGBA()
 	r, g, b = r>>8, g>>8, b>>8
-	
-	
-	//fmt.Println("rgb",x,y,z, a) // test
 	check(err)
 	matrix := spanImage(img, conf)
-	fmt.Println(matrix)
-	
 	h, w := len(matrix), len(matrix[0])
-	fmt.Println("size:", h,w)
-
-	// for i := 0; i < h; i++ {
-	// 	for j := 0; j < w; j++ {
-	// 		x, y, z, a := img.At(i, j).RGBA()
-	// 		x, y, z, a = x>>8, y>>8, z>>8, a>>8
-	// 		fmt.Println(x, y, z, a )
-	// 	}
-	// }
 
 	// check if there is enough capacity
 	cap := capacity(matrix)
@@ -260,7 +246,6 @@ func encode(filePath, targetPath, plainText string) error {
 				r := matrix[i][j][0]
 				g := matrix[i][j][1]
 				b := matrix[i][j][2]
-				//fmt.Println(100*(i*w+j)/(h*w),r,g,b) // test
 				// determine if pixel is too dark or too bright
 				if r > mem-SIZE-1 || r < SIZE + 1 || g > mem-SIZE-1 || g < SIZE + 1 || b > mem-SIZE-1 || b < SIZE + 1 {
 					// do nothing but raise increment
@@ -271,8 +256,6 @@ func encode(filePath, targetPath, plainText string) error {
 						chunk := bin[(i*w+j-increment)*4 : (i*w+j+1-increment)*4] // 4 bit chunk
 						encodedString += chunk
 						v := bitsToVector(chunk)
-
-						//fmt.Println("final", v, chunk)
 
 						// crop pixel
 						matrix[i][j][0] = r + v[0]
@@ -308,15 +291,7 @@ func encode(filePath, targetPath, plainText string) error {
 						
 					}
 				}
-			
-			// if encodedString == bin {
-			// 	breaker = true
-			// 	break
-			// }
 		}
-		// if breaker {
-		// 	break
-		// }
 	}
 	err = saveImage(targetPath, matrix)
 	return err
@@ -358,7 +333,6 @@ func saveImage(filePath string, matrix [][][]int) error {
 
 func spanImage(imageObject image.Image, configObject image.Config) (matrix [][][]int) {
 	h, w := configObject.Height, configObject.Width
-	//fmt.Println(h, w)
 	// determine dimensions and init matrix
 	matrix = make([][][]int, h)
 	for i := 0; i < h; i++ {
@@ -373,10 +347,6 @@ func spanImage(imageObject image.Image, configObject image.Config) (matrix [][][
 		for j := 0; j < w; j++ {
 			r, g, b, _ := imageObject.At(j, i).RGBA() // returns rgba each in 16 bit alpha color
 			r, g, b = r>>8, g>>8, b>>8
-			//fmt.Println(100*(i*w+j)/(h*w),r,g,b) // test
-			// if i == 0 && j == 0 {
-			// 	fmt.Println("raw RGBA:", r, g, b)
-			// }
 			
 			matrix[i][j][0] = int(r)
 			matrix[i][j][1] = int(g)
