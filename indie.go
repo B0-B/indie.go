@@ -28,7 +28,7 @@ var __version__ = "1.0.0"
 // == parameters ==
 var SIZE = 1
 var bits = 8
-var mem = int(math.Pow(2, float64(bits))) - 1
+var mem = int(math.Pow(2, float64(bits))) - 1 // 255
 
 // == types ==
 type Changeable interface {
@@ -221,10 +221,23 @@ func encode(filePath, targetPath, plainText string) error {
 	img, conf, err := loadImage(filePath)
 	r, g, b, _ := img.At(0, 0).RGBA()
 	r, g, b = r>>8, g>>8, b>>8
-
+	
+	
+	//fmt.Println("rgb",x,y,z, a) // test
 	check(err)
 	matrix := spanImage(img, conf)
+	fmt.Println(matrix)
+	
 	h, w := len(matrix), len(matrix[0])
+	fmt.Println("size:", h,w)
+
+	// for i := 0; i < h; i++ {
+	// 	for j := 0; j < w; j++ {
+	// 		x, y, z, a := img.At(i, j).RGBA()
+	// 		x, y, z, a = x>>8, y>>8, z>>8, a>>8
+	// 		fmt.Println(x, y, z, a )
+	// 	}
+	// }
 
 	// check if there is enough capacity
 	cap := capacity(matrix)
@@ -247,6 +260,7 @@ func encode(filePath, targetPath, plainText string) error {
 				r := matrix[i][j][0]
 				g := matrix[i][j][1]
 				b := matrix[i][j][2]
+				//fmt.Println(100*(i*w+j)/(h*w),r,g,b) // test
 				// determine if pixel is too dark or too bright
 				if r > mem-SIZE-1 || r < SIZE + 1 || g > mem-SIZE-1 || g < SIZE + 1 || b > mem-SIZE-1 || b < SIZE + 1 {
 					// do nothing but raise increment
@@ -267,7 +281,7 @@ func encode(filePath, targetPath, plainText string) error {
 				
 					} else {
 						/* add obscuring combination e.g. -SIZE,SIZE,-SIZE which have no effect */
-						// sample a random vector which has not effect
+						// sample a random vector 
 						u := rand.Float64()
 						// crop pixel
 						if u < 0.2 {
@@ -323,17 +337,16 @@ func loadImage(filePath string) (image.Image, image.Config, error) {
 func saveImage(filePath string, matrix [][][]int) error {
 
 	// create a writable img type
-	cimg := image.NewRGBA(image.Rect(0, 0, len(matrix), len(matrix[0])))
+	cimg := image.NewRGBA(image.Rect(0, 0, len(matrix[0]), len(matrix)))
+	
 	for i := 0; i < len(matrix); i++ {
 		for j := 0; j < len(matrix[0]); j++ {
 			if bits == 8 {
-				cimg.Set(i, j, color.RGBA{uint8(matrix[i][j][0]), uint8(matrix[i][j][1]), uint8(matrix[i][j][2]), 255})
+				cimg.Set(j, i, color.RGBA{uint8(matrix[i][j][0]), uint8(matrix[i][j][1]), uint8(matrix[i][j][2]), 255})
 			}
-
 		}
+		
 	}
-	x, y, z, _ := cimg.At(0, 0).RGBA()
-	x, y, z = x>>8, y>>8, z>>8
 	savePath, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0600)
 	check(err)
 	defer savePath.Close()
@@ -345,6 +358,7 @@ func saveImage(filePath string, matrix [][][]int) error {
 
 func spanImage(imageObject image.Image, configObject image.Config) (matrix [][][]int) {
 	h, w := configObject.Height, configObject.Width
+	//fmt.Println(h, w)
 	// determine dimensions and init matrix
 	matrix = make([][][]int, h)
 	for i := 0; i < h; i++ {
@@ -357,13 +371,13 @@ func spanImage(imageObject image.Image, configObject image.Config) (matrix [][][
 	// fill matrix
 	for i := 0; i < h; i++ {
 		for j := 0; j < w; j++ {
-			r, g, b, _ := imageObject.At(i, j).RGBA() // returns rgba each in 16 bit alpha color
+			r, g, b, _ := imageObject.At(j, i).RGBA() // returns rgba each in 16 bit alpha color
 			r, g, b = r>>8, g>>8, b>>8
+			//fmt.Println(100*(i*w+j)/(h*w),r,g,b) // test
 			// if i == 0 && j == 0 {
 			// 	fmt.Println("raw RGBA:", r, g, b)
 			// }
-
-			//fmt.Printf("[X : %d Y : %v] R : %v, G : %v, B : %v, A : %v  \n", i, j, r, g, b, a)
+			
 			matrix[i][j][0] = int(r)
 			matrix[i][j][1] = int(g)
 			matrix[i][j][2] = int(b)
